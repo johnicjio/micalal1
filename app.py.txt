@@ -1,0 +1,274 @@
+import streamlit as st
+import time
+
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="Cyber Secure India",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- CUSTOM CSS INJECTION ---
+# We inject some custom CSS to match the Indian Government theme (Navy Blue, Orange/Saffron)
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] {
+        background-color: #0A192F;
+        color: white;
+    }
+    [data-testid="stSidebar"] * {
+        color: white;
+    }
+    .stButton>button {
+        background-color: #1e3a8a;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+    }
+    .stButton>button:hover {
+        background-color: #172554;
+        color: white;
+    }
+    .helpline-box {
+        background-color: #dc2626;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        font-size: 24px;
+        font-weight: bold;
+        margin-top: 20px;
+    }
+    .top-banner {
+        border-bottom: 4px solid #FF9933;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .alert-banner {
+        background-color: #dc2626;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- DATA MODULES ---
+SCAMS_DATA = [
+    {
+        "id": 10,
+        "title": "Courier / Customs Scams",
+        "image": "image_2616e8.png", # Make sure this file is in the same directory as app.py
+        "desc": "Scammers pose as customs or courier companies claiming a package addressed to you contains illegal items, demanding a 'penalty' to avoid police action.",
+        "tips": ["Do not pay penalties for packages you didn't order.", "Verify directly with the official courier company.", "Customs officials do not demand money via WhatsApp."]
+    },
+    {
+        "id": 1,
+        "title": "AI Voice & Deepfake Scams",
+        "image": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&h=400&q=80",
+        "desc": "Scammers use AI to clone voices of loved ones or create deepfake videos to simulate distress (e.g., accidents, arrests) and demand immediate fund transfers.",
+        "tips": ["Establish a family 'safe word'.", "Call back the person on their original known number.", "Never send money in a state of panic."]
+    },
+    {
+        "id": 2,
+        "title": "Malicious APK (App) Drops",
+        "image": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=600&h=400&q=80",
+        "desc": "Fraudsters send APK files via WhatsApp disguised as banking rewards or system updates. Once installed, malware steals OTPs and empties accounts.",
+        "tips": ["Never install apps from unverified sources or APK files.", "Only use Google Play Store or Apple App Store.", "Keep 'Install from Unknown Sources' disabled."]
+    },
+    {
+        "id": 3,
+        "title": "UPI 'Collect Request' Fraud",
+        "image": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=600&h=400&q=80",
+        "desc": "Scammers claiming to send you money will ask you to enter your UPI PIN. Entering your PIN approves a deduction from your account, not a deposit.",
+        "tips": ["UPI PIN is ONLY used to SEND money, never to receive.", "Ignore unknown payment requests on UPI apps.", "Verify the receiver's details before paying."]
+    },
+    {
+        "id": 4,
+        "title": "Mule Account Recruitment",
+        "image": "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?auto=format&fit=crop&w=600&h=400&q=80",
+        "desc": "Fake 'Work from Home' jobs ask you to receive funds in your bank account and transfer them elsewhere, turning you into a money mule for illicit funds.",
+        "tips": ["Never allow strangers to use your bank account.", "Be wary of jobs requiring no skills but offering high pay.", "Report suspicious account activity immediately."]
+    }
+]
+
+NEWS_DATA = [
+    {
+        "title": "I4C & RBI Join Forces to Curtail Mule Accounts using AI",
+        "date": "May 12, 2026",
+        "category": "Policy & Tech",
+        "summary": "The Indian Cyber Crime Coordination Centre (I4C) signed an MoU with the Reserve Bank Innovation Hub to use an AI-driven system to detect and cull hidden mule accounts used in cyber frauds.",
+        "link": "https://pib.gov.in/"
+    },
+    {
+        "title": "Alert: Malicious WhatsApp APK Scams Lead to Heavy Losses",
+        "date": "May 16, 2026",
+        "category": "Threat Alert",
+        "summary": "A homemaker in Bengaluru lost over ₹4.4 lakh after inadvertently downloading an APK file sent on WhatsApp. Authorities warn against downloading files outside official app stores.",
+        "link": "https://cybercrime.gov.in/"
+    },
+    {
+        "title": "NCRB Data: Cybercrime Up by 18%, Fraud Biggest Motive",
+        "date": "May 07, 2026",
+        "category": "Report",
+        "summary": "Cases of cybercrime jumped by 18% in the latest reporting period. Financial frauds and cheating remain the highest motive, increasingly targeting Tier-2 and Tier-3 cities.",
+        "link": "https://ncrb.gov.in/"
+    },
+    {
+        "title": "New 'MuleHunter.ai' Deployed to Detect Digital Frauds",
+        "date": "May 13, 2026",
+        "category": "Innovation",
+        "summary": "A new AI tool helps in proactive detection of money laundering channels, severely crippling the infrastructure used by cybercriminals.",
+        "link": "https://i4c.mha.gov.in/"
+    }
+]
+
+# --- SIDEBAR NAVIGATION ---
+st.sidebar.markdown("## 🛡️ Cyber Secure India")
+st.sidebar.markdown("**National Awareness Portal**")
+st.sidebar.markdown("---")
+
+menu_options = ["Home", "Scams & Awareness", "Report Cyber Crime", "Press & News", "Nodal Agencies", "Contact Us"]
+choice = st.sidebar.radio("Citizen Services", menu_options)
+
+st.sidebar.markdown("<div class='helpline-box'>📞 1930</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<p style='text-align: center; margin-top: 10px; font-size: 12px;'>National Cyber Crime Helpline</p>", unsafe_allow_html=True)
+
+# --- TOP BANNER ---
+st.markdown("""
+<div class='top-banner'>
+    <b>GOV.IN</b> | Ministry of Home Affairs Initiative
+</div>
+<div class='alert-banner'>
+    🚨 <b>URGENT PUBLIC NOTICE:</b> Citizens are advised NOT to click on unknown links received via SMS claiming electricity disconnection. | Report financial fraud immediately by calling 1930.
+</div>
+""", unsafe_allow_html=True)
+
+# --- VIEWS ROUTING ---
+
+if choice == "Home":
+    st.title("Stay Vigilant. Stay Safe Online.")
+    st.markdown("#### Awareness is your strongest defense against cyber criminals. Learn about common scams and report incidents immediately.")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.info("💡 **Did you know?** Golden hour reporting (within 1-2 hours) drastically increases chances of fund recovery.")
+        
+        # Displaying quick stats/actions
+        st.markdown("### Quick Services")
+        if st.button("File a Complaint Online →"):
+            st.warning("Navigate to 'Report Cyber Crime' from the sidebar.")
+        if st.button("View Latest Scams Tips →"):
+             st.warning("Navigate to 'Scams & Awareness' from the sidebar.")
+             
+    with col2:
+        st.image("https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80", caption="Dial 1930 for Emergency")
+
+elif choice == "Scams & Awareness":
+    st.title("Common Modus Operandi & Safety")
+    st.markdown("*Issued in public interest. Please read and share with your family.*")
+    st.divider()
+
+    for scam in SCAMS_DATA:
+        col1, col2 = st.columns([1, 2.5])
+        
+        with col1:
+            try:
+                st.image(scam["image"], use_column_width=True)
+            except:
+                # Fallback if local image image_2616e8.png is not found
+                st.image("https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&h=400&q=80", use_column_width=True)
+                
+        with col2:
+            st.subheader(scam["title"])
+            st.write(scam["desc"])
+            
+            st.markdown("**🛡️ PRECAUTIONS:**")
+            for tip in scam["tips"]:
+                st.markdown(f"- ✅ {tip}")
+        
+        st.markdown("---")
+
+elif choice == "Report Cyber Crime":
+    st.title("Complaint Resolution Center")
+    
+    tab1, tab2, tab3 = st.tabs(["SOP & Guidance", "File Complaint", "Track Status"])
+    
+    with tab1:
+        st.subheader("Standard Operating Procedure (SOP)")
+        st.warning("Follow these critical steps immediately upon discovering a cyber fraud.")
+        st.markdown("""
+        **1. Immediate Action:** Call the National Helpline **1930** instantly. Contact your bank to block compromised debit/credit cards and freeze your account.
+        
+        **2. Preserve Evidence:** Do **not** delete WhatsApp chats, emails, or SMS. Take clear screenshots of the scammer's profile, phone numbers, payment UPI IDs, and transaction reference numbers (UTR).
+        
+        **3. Secure Devices:** Change passwords for affected accounts immediately using a different, safe device. If you downloaded an unknown app (APK), format your phone.
+        
+        **4. Register Online:** Use the 'File Complaint' tab here to generate an official acknowledgment number. You will need your Govt ID (Aadhaar/PAN) and bank passbook copy.
+        """)
+        
+    with tab2:
+        st.info("**Note:** Providing false information to law enforcement is a punishable offense. Ensure all details are accurate.")
+        with st.form("complaint_form"):
+            category = st.selectbox("Category of Complaint *", ["Online Financial Fraud", "Social Media Related Crime", "Hacking / Ransomware", "Cryptocurrency Fraud"])
+            datetime_val = st.date_input("Date of Incident *")
+            suspect = st.text_input("Suspect Details (Platform / Number / UPI ID)")
+            desc = st.text_area("Detailed Description of Incident *")
+            
+            submitted = st.form_submit_button("Submit Form")
+            if submitted:
+                if desc and suspect:
+                    st.success("Form Submitted Successfully! Your simulated Acknowledgment Number is: **2026154899201**")
+                else:
+                    st.error("Please fill in all mandatory fields.")
+                    
+    with tab3:
+        st.markdown("Enter your 13-digit Acknowledgment Number to check the current status of your complaint.")
+        ack_no = st.text_input("Acknowledgment Number (e.g., 202615...)")
+        if st.button("Track Status"):
+            if ack_no:
+                with st.spinner("Fetching status..."):
+                    time.sleep(1) # simulate network call
+                st.success(f"Status for **{ack_no}**: Under Investigation")
+                
+                # Simulated timeline
+                st.markdown("### Timeline")
+                st.success("✅ **1. Complaint Registered** (May 16, 2026 - 10:45 AM)")
+                st.success("✅ **2. Assigned to State Nodal Officer** (May 16, 2026 - 02:15 PM)")
+                st.warning("⏳ **3. Bank/Wallet Investigation** (Action Pending)")
+                st.info("⚪ **4. Final Resolution**")
+            else:
+                st.error("Please enter a valid tracking number.")
+
+elif choice == "Press & News":
+    st.title("Press Releases & News")
+    st.markdown("Latest updates from law enforcement and cyber agencies. (Current Month: May 2026)")
+    st.divider()
+    
+    # Display news in a 2-column grid
+    cols = st.columns(2)
+    for index, article in enumerate(NEWS_DATA):
+        with cols[index % 2]:
+            st.markdown(f"**[{article['category']}]** {article['date']}")
+            st.subheader(article["title"])
+            st.write(article["summary"])
+            st.markdown(f"[Read Full Release →]({article['link']})")
+            st.markdown("---")
+            
+    st.info("📩 **Subscribe to Threat Alerts:** Enter your email to receive periodic alerts on new cyber threats from nodal agencies.")
+    st.text_input("Email ID")
+    st.button("Subscribe")
+
+else:
+    st.title(choice)
+    st.info("Information under this section is currently being updated. Please check back later.")
+
+# --- FOOTER ---
+st.markdown("---")
+st.markdown("<p style='text-align: center; color: gray;'>© 2026 Cyber Secure India Awareness Portal. Issued in Public Interest.<br>This is a simulated awareness interface. In case of actual emergency, call 1930.</p>", unsafe_allow_html=True)
